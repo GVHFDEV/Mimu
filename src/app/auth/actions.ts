@@ -1,0 +1,240 @@
+'use server';
+
+import { createClient } from '@/lib/supabase/server';
+import { signUpSchema, loginSchema } from '@/lib/validations/auth';
+import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
+
+export async function signUp(formData: FormData) {
+  const rawData = {
+    username: formData.get('username') as string,
+    email: formData.get('email') as string,
+    password: formData.get('password') as string,
+    country: formData.get('country') as string,
+  };
+
+  const validation = signUpSchema.safeParse(rawData);
+
+  if (!validation.success) {
+    return {
+      success: false,
+      error: validation.error.issues[0].message,
+      field: validation.error.issues[0].path[0] as string,
+    };
+  }
+
+  const { username, email, password, country } = validation.data;
+
+  const supabase = await createClient();
+
+  const { data: existingProfile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('username', username)
+    .single();
+
+  if (existingProfile) {
+    return {
+      success: false,
+      error: 'Este nome de usuário já está em uso',
+      field: 'username',
+    };
+  }
+
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+    },
+  });
+
+  if (authError) {
+    return {
+      success: false,
+      error: authError.message === 'User already registered'
+        ? 'Este e-mail já está cadastrado'
+        : authError.message,
+      field: 'email',
+    };
+  }
+
+  if (!authData.user) {
+    return {
+      success: false,
+      error: 'Erro ao criar conta. Tente novamente.',
+      field: 'general',
+    };
+  }
+
+  const { error: profileError } = await supabase.from('profiles').insert({
+    id: authData.user.id,
+    username,
+    country,
+    created_at: new Date().toISOString(),
+  });
+
+  if (profileError) {
+    console.error('Profile creation error:', profileError);
+    return {
+      success: false,
+      error: 'Erro ao criar perfil. Tente novamente.',
+      field: 'general',
+    };
+  }
+
+  // Check if session was created (email confirmation disabled)
+  if (authData.session) {
+    // User is automatically logged in, redirect to dashboard
+    revalidatePath('/', 'layout');
+    redirect('/dashboard');
+  }
+
+  // No session (email confirmation enabled), show success card
+  return {
+    success: true,
+    email,
+  };
+}
+
+export async function login(formData: FormData) {
+  const rawData = {
+    email: formData.get('email') as string,
+    password: formData.get('password') as string,
+  };
+
+  const validation = loginSchema.safeParse(rawData);
+
+  if (!validation.success) {
+    return {
+      error: validation.error.issues[0].message,
+      field: validation.error.issues[0].path[0] as string,
+    };
+  }
+
+  const { email, password } = validation.data;
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    return {
+      error: 'E-mail ou senha incorretos',
+      field: 'general',
+    };
+  }
+
+  revalidatePath('/', 'layout');
+  redirect('/dashboard');
+}
+
+export async function signOut() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  revalidatePath('/', 'layout');
+  redirect('/login');
+}
+
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (data.url) {
+    redirect(data.url);
+  }
+}
+
+export async function completeProfile(formData: FormData) {
+  const username = formData.get('username') as string;
+  const country = formData.get('country') as string;
+
+  // Validate
+  if (!username || username.length < 2) {
+    return { error: 'Nome deve ter pelo menos 2 caracteres', field: 'username' };
+  }
+  if (!country) {
+    return { error: 'Selecione um país', field: 'country' };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: 'Usuário não autenticado', field: 'general' };
+  }
+
+  // Check username uniqueness
+  const { data: existingProfile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('username', username)
+    .single();
+
+  if (existingProfile) {
+    return { error: 'Este nome já está em uso', field: 'username' };
+  }
+
+  // Create profile
+  const { error } = await supabase.from('profiles').insert({
+    id: user.id,
+    username,
+    country,
+    created_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    return { error: 'Erro ao salvar perfil', field: 'general' };
+  }
+
+  revalidatePath('/', 'layout');
+  redirect('/dashboard');
+}
+
+export async function createPet(formData: FormData) {
+  const name = formData.get('name') as string;
+  const species = formData.get('species') as string;
+
+  // Validate
+  if (!name || name.length < 2) {
+    return { error: 'Nome deve ter pelo menos 2 caracteres', field: 'name' };
+  }
+  if (!species || !['dog', 'cat', 'other'].includes(species)) {
+    return { error: 'Selecione uma espécie válida', field: 'species' };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: 'Usuário não autenticado', field: 'general' };
+  }
+
+  // Create pet
+  const { error } = await supabase.from('pets').insert({
+    owner_id: user.id,
+    name,
+    species,
+    created_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    console.error('Pet creation error:', error);
+    return { error: 'Erro ao cadastrar pet. Tente novamente.', field: 'general' };
+  }
+
+  return { success: true };
+}

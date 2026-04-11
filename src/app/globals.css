@@ -1,26 +1,48 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Cocogoose';
+  src: url('./fonts/COCOGOOSE.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nunito';
+  src: url('./fonts/Nunito-Variable.woff2') format('woff2');
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Nunito';
+  src: url('./fonts/Nunito-VariableItalic.woff2') format('woff2');
+  font-weight: 200 1000;
+  font-style: italic;
+  font-display: swap;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --mimu-forest: #4F6D45;
+  --mimu-sprout: #A6B89E;
+  --mimu-oak: #8B7355;
+  --mimu-linen: #F5F5F0;
+  --mimu-obsidian: #1A1A1A;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-mimu-forest: var(--mimu-forest);
+  --color-mimu-sprout: var(--mimu-sprout);
+  --color-mimu-oak: var(--mimu-oak);
+  --color-mimu-linen: var(--mimu-linen);
+  --color-mimu-obsidian: var(--mimu-obsidian);
+  --font-display: 'Cocogoose', system-ui, sans-serif;
+  --font-sans: 'Nunito', system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--mimu-linen);
+  color: var(--mimu-obsidian);
 }
