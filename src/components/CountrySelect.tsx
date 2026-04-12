@@ -42,7 +42,7 @@ export function CountrySelect({ value, onChange, error, disabled }: CountrySelec
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full px-4 py-3 rounded-3xl bg-white text-left flex items-center justify-between transition-all duration-200 ${
+        className={`w-full px-3 py-2.5 min-h-[44px] rounded-xl bg-white text-left flex items-center justify-between transition-all duration-200 ${
           error
             ? 'border border-red-400 focus:border-red-500'
             : 'border border-[#5F7C50]/20 focus:border-[#5F7C50]/40'

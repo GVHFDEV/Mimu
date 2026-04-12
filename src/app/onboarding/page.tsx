@@ -6,7 +6,9 @@ import { toPng } from 'html-to-image';
 import { createPet } from '@/app/auth/actions';
 import { Logo } from '@/components/Logo';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { OnboardingHeader } from '@/components/OnboardingHeader';
 import { AnimalSelect } from '@/components/AnimalSelect';
+import { BreedSelect, hasSpecificBreeds } from '@/components/BreedSelect';
 
 export default function OnboardingPage() {
   const [isPending, startTransition] = useTransition();
@@ -26,12 +28,28 @@ export default function OnboardingPage() {
   const [sex, setSex] = useState('');
   const [weight, setWeight] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [size, setSize] = useState('');
+  const [breed, setBreed] = useState('');
 
   // Step 3 states
   const [temperaments, setTemperaments] = useState<string[]>([]);
   const [showMimuId, setShowMimuId] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const mimuIdRef = useRef<HTMLDivElement>(null);
+
+  // Multi-pet states
+  const [showFamilyList, setShowFamilyList] = useState(false);
+  const [createdPets, setCreatedPets] = useState<Array<{
+    name: string;
+    species: string;
+    size: string;
+    breed: string;
+    sex: string;
+    weight: string;
+    birthDate: string;
+    temperaments: string[];
+    photoPreview: string | null;
+  }>>([]);
 
   const temperamentOptions = [
     { value: 'playful', label: 'Brincalhão', icon: '🎾' },
@@ -49,6 +67,26 @@ export default function OnboardingPage() {
       setTemperaments([...temperaments, value]);
     }
     triggerHaptic();
+  };
+
+  // Reset form for new pet
+  const resetForm = () => {
+    setPetName('');
+    setSpecies('');
+    setShowOtherSelect(false);
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setSex('');
+    setWeight('');
+    setBirthDate('');
+    setSize('');
+    setBreed('');
+    setTemperaments([]);
+    setStep(1);
+    setShowMimuId(false);
+    setShowFamilyList(false);
+    setErrors({});
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Share Mimu ID
@@ -238,6 +276,15 @@ export default function OnboardingPage() {
 
     if (step === 2) {
       // Validate step 2
+      if (!size) {
+        setErrors({ size: 'Selecione o porte do pet' });
+        return;
+      }
+      // Only validate breed if species has specific breeds
+      if (hasSpecificBreeds(species) && !breed) {
+        setErrors({ breed: 'Selecione a raça do pet' });
+        return;
+      }
       if (!sex) {
         setErrors({ sex: 'Selecione o sexo do pet' });
         return;
@@ -246,11 +293,6 @@ export default function OnboardingPage() {
         setErrors({ weight: 'Informe um peso válido' });
         return;
       }
-      if (!birthDate) {
-        setErrors({ birthDate: 'Informe a data de nascimento' });
-        return;
-      }
-
       // Move to step 3
       setStep(3);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -262,6 +304,9 @@ export default function OnboardingPage() {
       const formData = new FormData();
       formData.set('name', petName);
       formData.set('species', species);
+      formData.set('size', size);
+      // Set breed to SRD if species doesn't have specific breeds
+      formData.set('breed', hasSpecificBreeds(species) ? breed : 'Sem Raça Definida (SRD)');
       formData.set('sex', sex);
       formData.set('weight', weight);
       formData.set('birthDate', birthDate);
@@ -275,6 +320,18 @@ export default function OnboardingPage() {
         if (result?.error) {
           setErrors({ [result.field]: result.error });
         } else {
+          // Save pet data to createdPets array
+          setCreatedPets([...createdPets, {
+            name: petName,
+            species,
+            size,
+            breed: hasSpecificBreeds(species) ? breed : 'Sem Raça Definida (SRD)',
+            sex,
+            weight,
+            birthDate,
+            temperaments,
+            photoPreview,
+          }]);
           // Show Mimu ID before redirect
           setShowMimuId(true);
         }
@@ -291,41 +348,9 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F5F5F0] via-[#F5F5F0] to-[#A6B89E]/10 flex flex-col">
-      {/* Header fixo */}
-      <header className="bg-[#F5F5F0]/80 backdrop-blur-sm border-b border-[#5F7C50]/10 px-8 lg:px-24 xl:px-32 py-4 sticky top-0 z-50">
-        {/* Mobile: Logo centralizada */}
-        <div className="flex justify-center md:hidden">
-          <Logo className="w-32 h-auto" />
-        </div>
+      {/* Header dinâmico */}
+      <OnboardingHeader />
 
-        {/* Desktop: Layout completo */}
-        <div className="hidden md:flex items-center justify-between">
-          <Logo className="w-32 h-auto" />
-
-          <div className="flex items-center gap-6">
-            {/* Placeholders de botões */}
-            <button className="px-4 py-2 text-sm text-[#141414]/60 hover:text-[#141414] transition-colors font-sans">
-              Ajuda
-            </button>
-            <button className="px-4 py-2 text-sm text-[#141414]/60 hover:text-[#141414] transition-colors font-sans">
-              Configurações
-            </button>
-
-            {/* Divisória */}
-            <div className="w-px h-8 bg-[#5F7C50]/20" />
-
-            {/* Área de perfil */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#5F7C50] flex items-center justify-center text-white font-display text-sm">
-                US
-              </div>
-              <span className="text-sm font-medium text-[#141414] font-sans">
-                Usuário
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
 
       {/* Conteúdo principal */}
       <main className="flex-1 flex items-start justify-center px-8 lg:px-16 py-10 relative">
@@ -638,7 +663,117 @@ export default function OnboardingPage() {
                 transition={{ duration: 0.5 }}
               >
                 {/* Sexo */}
-                <div>
+                {/* Porte */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-[#1A1A1A] mb-3 font-sans flex items-center gap-2">
+                    <span>Porte</span>
+                    <span className="text-xs text-[#1A1A1A]/40 font-normal">*obrigatório</span>
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Pequeno */}
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      onClick={() => {
+                        setSize('small');
+                        triggerHaptic();
+                      }}
+                      className={`p-4 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center gap-2 min-h-[100px] shadow-sm ${
+                        size === 'small'
+                          ? 'border-[#4F6D45] bg-gradient-to-br from-[#4F6D45]/10 to-[#4F6D45]/5 shadow-md ring-2 ring-[#4F6D45]/20'
+                          : 'border-[#4F6D45]/20 bg-white hover:border-[#4F6D45]/40 hover:shadow-md'
+                      }`}
+                    >
+                      <div className={`text-3xl ${size === 'small' ? 'scale-110' : ''} transition-transform`}>
+                        🐾
+                      </div>
+                      <span className={`text-sm font-medium font-sans ${
+                        size === 'small' ? 'text-[#4F6D45]' : 'text-[#1A1A1A]'
+                      }`}>
+                        Pequeno
+                      </span>
+                    </motion.button>
+
+                    {/* Médio */}
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      onClick={() => {
+                        setSize('medium');
+                        triggerHaptic();
+                      }}
+                      className={`p-4 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center gap-2 min-h-[100px] shadow-sm ${
+                        size === 'medium'
+                          ? 'border-[#4F6D45] bg-gradient-to-br from-[#4F6D45]/10 to-[#4F6D45]/5 shadow-md ring-2 ring-[#4F6D45]/20'
+                          : 'border-[#4F6D45]/20 bg-white hover:border-[#4F6D45]/40 hover:shadow-md'
+                      }`}
+                    >
+                      <div className={`text-3xl ${size === 'medium' ? 'scale-110' : ''} transition-transform`}>
+                        🐕
+                      </div>
+                      <span className={`text-sm font-medium font-sans ${
+                        size === 'medium' ? 'text-[#4F6D45]' : 'text-[#1A1A1A]'
+                      }`}>
+                        Médio
+                      </span>
+                    </motion.button>
+
+                    {/* Grande */}
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      onClick={() => {
+                        setSize('large');
+                        triggerHaptic();
+                      }}
+                      className={`p-4 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center gap-2 min-h-[100px] shadow-sm ${
+                        size === 'large'
+                          ? 'border-[#4F6D45] bg-gradient-to-br from-[#4F6D45]/10 to-[#4F6D45]/5 shadow-md ring-2 ring-[#4F6D45]/20'
+                          : 'border-[#4F6D45]/20 bg-white hover:border-[#4F6D45]/40 hover:shadow-md'
+                      }`}
+                    >
+                      <div className={`text-3xl ${size === 'large' ? 'scale-110' : ''} transition-transform`}>
+                        🦮
+                      </div>
+                      <span className={`text-sm font-medium font-sans ${
+                        size === 'large' ? 'text-[#4F6D45]' : 'text-[#1A1A1A]'
+                      }`}>
+                        Grande
+                      </span>
+                    </motion.button>
+                  </div>
+                  {errors.size && (
+                    <p className="mt-2 text-xs text-red-500 font-sans flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.size}
+                    </p>
+                  )}
+                </div>
+
+                {/* Raça - só mostra se tiver raças específicas */}
+                {hasSpecificBreeds(species) && (
+                  <div className="mb-6">
+                    <label htmlFor="breed" className="block text-sm font-medium text-[#1A1A1A] mb-2 font-sans flex items-center gap-2">
+                      <span>Raça</span>
+                      <span className="text-xs text-[#1A1A1A]/40 font-normal">*obrigatório</span>
+                    </label>
+                    <BreedSelect
+                      species={species}
+                      value={breed}
+                      onChange={setBreed}
+                      error={errors.breed}
+                      disabled={isPending}
+                    />
+                  </div>
+                )}
+
+                {/* Sexo */}
+                <div className="mb-6">
                   <label className="block text-sm font-medium text-[#1A1A1A] mb-3 font-sans flex items-center gap-2">
                     <span>Sexo</span>
                     <span className="text-xs text-[#1A1A1A]/40 font-normal">*obrigatório</span>
@@ -717,7 +852,7 @@ export default function OnboardingPage() {
                 </div>
 
                 {/* Peso */}
-                <div>
+                <div className="mb-6">
                   <label htmlFor="weight" className="block text-sm font-medium text-[#1A1A1A] mb-2 font-sans flex items-center gap-2">
                     <span>Peso aproximado</span>
                     <span className="text-xs text-[#1A1A1A]/40 font-normal">*obrigatório</span>
@@ -761,7 +896,7 @@ export default function OnboardingPage() {
                 <div>
                   <label htmlFor="birthDate" className="block text-sm font-medium text-[#1A1A1A] mb-2 font-sans flex items-center gap-2">
                     <span>Data de nascimento</span>
-                    <span className="text-xs text-[#1A1A1A]/40 font-normal">*obrigatório</span>
+                    <span className="text-xs text-[#1A1A1A]/40 font-normal">opcional</span>
                   </label>
                   <input
                     type="date"
@@ -769,7 +904,6 @@ export default function OnboardingPage() {
                     value={birthDate}
                     onChange={(e) => setBirthDate(e.target.value)}
                     max={new Date().toISOString().split('T')[0]}
-                    required
                     disabled={isPending}
                     className={`w-full px-4 py-3 min-h-[48px] rounded-xl bg-white border-2 transition-all duration-200 text-sm shadow-sm ${
                       errors.birthDate
@@ -882,7 +1016,7 @@ export default function OnboardingPage() {
               <motion.button
                 type="submit"
                 form="pet-form"
-                disabled={isPending || (step === 1 && (!petName || !species)) || (step === 2 && (!sex || !weight || !birthDate))}
+                disabled={isPending || (step === 1 && (!petName || !species)) || (step === 2 && (!size || (hasSpecificBreeds(species) && !breed) || !sex || !weight))}
                 whileTap={{ scale: 0.95 }}
                 whileHover={{ scale: 1.02 }}
                 className={`${step === 1 ? 'ml-auto' : ''} px-8 py-3 min-h-[48px] rounded-2xl bg-gradient-to-r from-[#4F6D45] to-[#4F6D45]/90 text-white text-sm font-medium hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-[#4F6D45]/20 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed font-sans flex items-center justify-center gap-2 group`}
@@ -1054,9 +1188,113 @@ export default function OnboardingPage() {
               </motion.button>
 
               <motion.button
+                onClick={() => {
+                  setShowMimuId(false);
+                  setShowFamilyList(true);
+                }}
+                whileTap={{ scale: 0.95 }}
+                className="w-full py-2.5 rounded-2xl bg-transparent border-2 border-[#4F6D45]/20 text-[#4F6D45] font-medium hover:bg-[#4F6D45]/5 hover:border-[#4F6D45]/40 transition-all duration-200 font-sans text-sm"
+              >
+                Adicionar Novo Pet
+              </motion.button>
+
+              <motion.button
                 onClick={() => window.location.href = '/dashboard'}
                 whileTap={{ scale: 0.95 }}
                 className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-[#4F6D45] to-[#4F6D45]/90 text-white font-medium hover:shadow-xl transition-all duration-200 shadow-lg font-sans text-sm"
+              >
+                Ir para o Dashboard
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* Family List View */}
+      {showFamilyList && (
+        <motion.div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <motion.div
+            className="bg-white rounded-3xl shadow-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto relative"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, type: 'spring' }}
+          >
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-[#4F6D45] font-display mb-2">
+                Sua Família Mimu
+              </h2>
+              <p className="text-sm text-[#1A1A1A]/70 font-sans">
+                {createdPets.length} {createdPets.length === 1 ? 'pet cadastrado' : 'pets cadastrados'} nesta sessão
+              </p>
+            </div>
+
+            {/* Pet Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {createdPets.map((pet, index) => (
+                <motion.div
+                  key={index}
+                  className="bg-gradient-to-br from-[#F5F5F0] to-[#A6B89E]/10 rounded-2xl p-4 border-2 border-[#4F6D45]/10"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    {pet.photoPreview ? (
+                      <img
+                        src={pet.photoPreview}
+                        alt={pet.name}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-[#A6B89E]/30 flex items-center justify-center border-2 border-white shadow-md">
+                        <span className="text-xl">🐾</span>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <h3 className="text-base font-bold text-[#4F6D45] font-display">{pet.name}</h3>
+                      <p className="text-xs text-[#1A1A1A]/70 font-sans capitalize">
+                        {pet.species === 'dog' ? 'Cão' : pet.species === 'cat' ? 'Gato' : 'Outro'} · {pet.sex === 'male' ? 'Macho' : 'Fêmea'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-white/50 rounded-lg p-2">
+                      <p className="text-[#1A1A1A]/50 font-sans text-[9px]">Porte</p>
+                      <p className="text-[#4F6D45] font-semibold font-sans">
+                        {pet.size === 'small' ? 'Pequeno' : pet.size === 'medium' ? 'Médio' : 'Grande'}
+                      </p>
+                    </div>
+                    <div className="bg-white/50 rounded-lg p-2">
+                      <p className="text-[#1A1A1A]/50 font-sans text-[9px]">Raça</p>
+                      <p className="text-[#4F6D45] font-semibold font-sans truncate">{pet.breed}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <motion.button
+                onClick={resetForm}
+                whileTap={{ scale: 0.95 }}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#4F6D45] to-[#4F6D45]/90 text-white font-medium hover:shadow-xl transition-all duration-200 shadow-lg font-sans text-sm flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Adicionar Mais um Pet</span>
+              </motion.button>
+
+              <motion.button
+                onClick={() => window.location.href = '/dashboard'}
+                whileTap={{ scale: 0.95 }}
+                className="w-full py-3 rounded-2xl bg-transparent border-2 border-[#4F6D45]/20 text-[#4F6D45] font-medium hover:bg-[#4F6D45]/5 hover:border-[#4F6D45]/40 transition-all duration-200 font-sans text-sm"
               >
                 Ir para o Dashboard
               </motion.button>

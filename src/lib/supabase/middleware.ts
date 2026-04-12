@@ -15,7 +15,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({
@@ -39,37 +39,78 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Allow auth callback, error pages, and onboarding without authentication
-  if (
-    request.nextUrl.pathname.startsWith('/auth/callback') ||
-    request.nextUrl.pathname.startsWith('/auth/auth-code-error') ||
-    request.nextUrl.pathname.startsWith('/onboarding')
-  ) {
+  const pathname = request.nextUrl.pathname;
+
+  // Public routes - always accessible
+  const publicRoutes = [
+    '/auth/callback',
+    '/auth/auth-code-error',
+  ];
+
+  if (publicRoutes.some(route => pathname.startsWith(route))) {
     return supabaseResponse;
   }
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/signup') &&
-    !request.nextUrl.pathname.startsWith('/forgot-password') &&
-    request.nextUrl.pathname !== '/'
-  ) {
+  // Auth pages - only for non-authenticated users
+  const authPages = ['/login', '/signup', '/forgot-password', '/'];
+
+  // Protected routes - require authentication
+  const protectedRoutes = ['/dashboard', '/onboarding'];
+
+  // === LOGGED OUT USER ===
+  if (!user) {
+    // Allow access to auth pages
+    if (authPages.includes(pathname)) {
+      return supabaseResponse;
+    }
+
+    // Redirect to login for any other route
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  // Removed redirect conflict - let Server Actions handle auth redirects
-  // if (
-  //   user &&
-  //   (request.nextUrl.pathname.startsWith('/login') ||
-  //     request.nextUrl.pathname.startsWith('/signup'))
-  // ) {
-  //   const url = request.nextUrl.clone();
-  //   url.pathname = '/dashboard';
-  //   return NextResponse.redirect(url);
-  // }
+  // === LOGGED IN USER ===
+  
+  // Block access to auth pages - redirect to dashboard
+  if (authPages.includes(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
+
+  // Check if user has completed onboarding (has at least one pet)
+  const { data: pets, error } = await supabase
+    .from('pets')
+    .select('id')
+    .eq('owner_id', user.id)
+    .limit(1);
+
+  const hasCompletedOnboarding = pets && pets.length > 0;
+
+  // User trying to access onboarding
+  if (pathname === '/onboarding') {
+    // If onboarding already completed, block access and redirect to dashboard
+    if (hasCompletedOnboarding) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+    // Allow access if not completed
+    return supabaseResponse;
+  }
+
+  // User trying to access dashboard or other protected routes
+  if (protectedRoutes.some(route => pathname.startsWith(route))) {
+    // If onboarding NOT completed, force redirect to onboarding
+    if (!hasCompletedOnboarding) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/onboarding';
+      return NextResponse.redirect(url);
+    }
+    // Allow access if onboarding completed
+    return supabaseResponse;
+  }
 
   return supabaseResponse;
 }

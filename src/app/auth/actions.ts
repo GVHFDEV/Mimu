@@ -27,6 +27,7 @@ export async function signUp(formData: FormData) {
 
   const supabase = await createClient();
 
+  // Check username uniqueness before creating user
   const { data: existingProfile } = await supabase
     .from('profiles')
     .select('username')
@@ -41,10 +42,15 @@ export async function signUp(formData: FormData) {
     };
   }
 
+  // Create user with metadata - trigger will handle profile creation
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
     options: {
+      data: {
+        username,
+        country,
+      },
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
     },
   });
@@ -63,22 +69,6 @@ export async function signUp(formData: FormData) {
     return {
       success: false,
       error: 'Erro ao criar conta. Tente novamente.',
-      field: 'general',
-    };
-  }
-
-  const { error: profileError } = await supabase.from('profiles').insert({
-    id: authData.user.id,
-    username,
-    country,
-    created_at: new Date().toISOString(),
-  });
-
-  if (profileError) {
-    console.error('Profile creation error:', profileError);
-    return {
-      success: false,
-      error: 'Erro ao criar perfil. Tente novamente.',
       field: 'general',
     };
   }
@@ -146,6 +136,10 @@ export async function signInWithGoogle() {
     provider: 'google',
     options: {
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
+      },
     },
   });
 
@@ -207,6 +201,8 @@ export async function completeProfile(formData: FormData) {
 export async function createPet(formData: FormData) {
   const name = formData.get('name') as string;
   const species = formData.get('species') as string;
+  const size = formData.get('size') as string;
+  const breed = formData.get('breed') as string;
   const photo = formData.get('photo') as File | null;
   const sex = formData.get('sex') as string;
   const weight = formData.get('weight') as string;
@@ -227,14 +223,18 @@ export async function createPet(formData: FormData) {
   if (!species || !['dog', 'cat', 'other'].includes(species)) {
     return { error: 'Selecione uma espécie válida', field: 'species' };
   }
+  if (!size || !['small', 'medium', 'large'].includes(size)) {
+    return { error: 'Selecione o porte do pet', field: 'size' };
+  }
+  // Breed is optional - only validate if provided
+  if (breed && breed.length < 2) {
+    return { error: 'Raça inválida', field: 'breed' };
+  }
   if (!sex || !['male', 'female'].includes(sex)) {
     return { error: 'Selecione o sexo do pet', field: 'sex' };
   }
   if (!weight || parseFloat(weight) <= 0) {
     return { error: 'Informe um peso válido', field: 'weight' };
-  }
-  if (!birthDate) {
-    return { error: 'Informe a data de nascimento', field: 'birthDate' };
   }
 
   const supabase = await createClient();
@@ -281,9 +281,11 @@ export async function createPet(formData: FormData) {
     owner_id: user.id,
     name,
     species,
+    size,
+    breed: breed || 'Sem Raça Definida (SRD)',
     sex,
     weight: parseFloat(weight),
-    birth_date: birthDate,
+    birth_date: birthDate || null,
     tags: temperaments,
     photo_url: photoUrl,
     created_at: new Date().toISOString(),
