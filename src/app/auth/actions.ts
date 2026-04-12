@@ -207,6 +207,18 @@ export async function completeProfile(formData: FormData) {
 export async function createPet(formData: FormData) {
   const name = formData.get('name') as string;
   const species = formData.get('species') as string;
+  const photo = formData.get('photo') as File | null;
+  const sex = formData.get('sex') as string;
+  const weight = formData.get('weight') as string;
+  const birthDate = formData.get('birthDate') as string;
+  const temperamentsJson = formData.get('temperaments') as string;
+
+  let temperaments: string[] = [];
+  try {
+    temperaments = temperamentsJson ? JSON.parse(temperamentsJson) : [];
+  } catch (e) {
+    temperaments = [];
+  }
 
   // Validate
   if (!name || name.length < 2) {
@@ -214,6 +226,15 @@ export async function createPet(formData: FormData) {
   }
   if (!species || !['dog', 'cat', 'other'].includes(species)) {
     return { error: 'Selecione uma espécie válida', field: 'species' };
+  }
+  if (!sex || !['male', 'female'].includes(sex)) {
+    return { error: 'Selecione o sexo do pet', field: 'sex' };
+  }
+  if (!weight || parseFloat(weight) <= 0) {
+    return { error: 'Informe um peso válido', field: 'weight' };
+  }
+  if (!birthDate) {
+    return { error: 'Informe a data de nascimento', field: 'birthDate' };
   }
 
   const supabase = await createClient();
@@ -223,11 +244,48 @@ export async function createPet(formData: FormData) {
     return { error: 'Usuário não autenticado', field: 'general' };
   }
 
+  let photoUrl: string | null = null;
+
+  // Upload photo if provided
+  if (photo && photo.size > 0) {
+    try {
+      const fileExt = photo.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('pet-photos')
+        .upload(fileName, photo, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        return { error: 'Erro ao fazer upload da foto', field: 'photo' };
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('pet-photos')
+        .getPublicUrl(fileName);
+
+      photoUrl = publicUrl;
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      return { error: 'Erro ao processar foto', field: 'photo' };
+    }
+  }
+
   // Create pet
   const { error } = await supabase.from('pets').insert({
     owner_id: user.id,
     name,
     species,
+    sex,
+    weight: parseFloat(weight),
+    birth_date: birthDate,
+    tags: temperaments,
+    photo_url: photoUrl,
     created_at: new Date().toISOString(),
   });
 
