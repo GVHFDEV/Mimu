@@ -41,6 +41,16 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Skip middleware for Server Actions (they handle their own auth)
+  const isServerAction = request.method === 'POST' && (
+    request.headers.get('content-type')?.includes('multipart/form-data') ||
+    request.headers.get('next-action')
+  );
+
+  if (isServerAction) {
+    return supabaseResponse;
+  }
+
   // Public routes - always accessible
   const publicRoutes = [
     '/auth/callback',
