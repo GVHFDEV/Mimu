@@ -22,7 +22,13 @@ export async function updateSession(request: NextRequest) {
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              sameSite: 'lax',
+              secure: process.env.NODE_ENV === 'production',
+              path: '/',
+              maxAge: 60 * 60 * 24 * 7, // 7 days
+            })
           );
         },
       },
@@ -54,15 +60,16 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (
-    user &&
-    (request.nextUrl.pathname.startsWith('/login') ||
-      request.nextUrl.pathname.startsWith('/signup'))
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
-  }
+  // Removed redirect conflict - let Server Actions handle auth redirects
+  // if (
+  //   user &&
+  //   (request.nextUrl.pathname.startsWith('/login') ||
+  //     request.nextUrl.pathname.startsWith('/signup'))
+  // ) {
+  //   const url = request.nextUrl.clone();
+  //   url.pathname = '/dashboard';
+  //   return NextResponse.redirect(url);
+  // }
 
   return supabaseResponse;
 }
