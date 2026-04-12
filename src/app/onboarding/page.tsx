@@ -911,7 +911,7 @@ export default function OnboardingPage() {
         <div className="w-full max-w-6xl">
           <div className="border-t border-[#4F6D45]/5 pt-6">
             <p className="text-center text-xs text-[#1A1A1A]/40 font-sans">
-              © 2026 Mimu · Sua jornada começa aqui
+              © 2026 Mimu
             </p>
           </div>
         </div>
