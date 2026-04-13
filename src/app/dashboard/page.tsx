@@ -410,7 +410,8 @@ export default function DashboardPage() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="bg-white rounded-3xl shadow-md p-6 border border-[#5F7C50]/10 hover:shadow-lg transition-all duration-200 text-left"
+                onClick={() => router.push('/dashboard/routine')}
+                className="bg-white rounded-3xl shadow-md p-6 border border-[#5F7C50]/10 hover:shadow-lg transition-all duration-200 text-left cursor-pointer"
               >
                 <div className="w-12 h-12 bg-gradient-to-br from-[#5F7C50]/20 to-[#A6B89E]/20 rounded-2xl flex items-center justify-center mb-4">
                   <span className="text-2xl">📅</span>
@@ -419,7 +420,7 @@ export default function DashboardPage() {
                   Rotina
                 </h3>
                 <p className="text-[#1A1A1A]/70 font-sans text-sm">
-                  Agenda de passeios, alimentação e cuidados
+                  Atividades diárias gamificadas
                 </p>
               </motion.button>
 
@@ -427,7 +428,7 @@ export default function DashboardPage() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="bg-white rounded-3xl shadow-md p-6 border border-[#5F7C50]/10 hover:shadow-lg transition-all duration-200 text-left"
+                className="bg-white rounded-3xl shadow-md p-6 border border-[#5F7C50]/10 hover:shadow-lg transition-all duration-200 text-left cursor-pointer"
               >
                 <div className="w-12 h-12 bg-gradient-to-br from-[#5F7C50]/20 to-[#A6B89E]/20 rounded-2xl flex items-center justify-center mb-4">
                   <span className="text-2xl">🍖</span>
@@ -440,28 +441,12 @@ export default function DashboardPage() {
                 </p>
               </motion.button>
 
-              {/* Atividades */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="bg-white rounded-3xl shadow-md p-6 border border-[#5F7C50]/10 hover:shadow-lg transition-all duration-200 text-left"
-              >
-                <div className="w-12 h-12 bg-gradient-to-br from-[#5F7C50]/20 to-[#A6B89E]/20 rounded-2xl flex items-center justify-center mb-4">
-                  <span className="text-2xl">🎾</span>
-                </div>
-                <h3 className="text-lg font-bold text-[#5F7C50] mb-2 font-display">
-                  Atividades
-                </h3>
-                <p className="text-[#1A1A1A]/70 font-sans text-sm">
-                  Exercícios, brincadeiras e socialização
-                </p>
-              </motion.button>
-
               {/* Documentos */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="bg-white rounded-3xl shadow-md p-6 border border-[#5F7C50]/10 hover:shadow-lg transition-all duration-200 text-left"
+                onClick={() => router.push('/dashboard/health')}
+                className="bg-white rounded-3xl shadow-md p-6 border border-[#5F7C50]/10 hover:shadow-lg transition-all duration-200 text-left cursor-pointer"
               >
                 <div className="w-12 h-12 bg-gradient-to-br from-[#5F7C50]/20 to-[#A6B89E]/20 rounded-2xl flex items-center justify-center mb-4">
                   <span className="text-2xl">📄</span>
@@ -478,7 +463,8 @@ export default function DashboardPage() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="bg-white rounded-3xl shadow-md p-6 border border-[#5F7C50]/10 hover:shadow-lg transition-all duration-200 text-left"
+                onClick={() => router.push('/emergency')}  // Página fictícia, talvez deva levar para configurações de emergência
+                className="bg-white rounded-3xl shadow-md p-6 border border-[#5F7C50]/10 hover:shadow-lg transition-all duration-200 text-left cursor-pointer"
               >
                 <div className="w-12 h-12 bg-gradient-to-br from-red-500/20 to-red-400/20 rounded-2xl flex items-center justify-center mb-4">
                   <span className="text-2xl">🚨</span>

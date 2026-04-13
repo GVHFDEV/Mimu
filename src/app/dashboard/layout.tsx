@@ -120,12 +120,12 @@ export default function DashboardLayout({
           <Logo className="w-32 h-auto" />
 
           <div className="flex items-center gap-6">
-            {/* Botão Loja */}
+            {/* Botão Rotina */}
             <button
-              onClick={() => router.push('/loja')}
+              onClick={() => router.push('/dashboard/routine')}
               className="px-4 py-2 text-sm text-[#141414]/60 hover:text-[#141414] transition-colors font-sans"
             >
-              Loja
+              Rotina
             </button>
 
             {/* Divisória */}
@@ -251,8 +251,11 @@ export default function DashboardLayout({
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#5F7C50]/10 z-40">
-        <div className="grid grid-cols-4 h-16">
-          <button className="flex flex-col items-center justify-center gap-1 text-[#5F7C50] bg-[#5F7C50]/5">
+        <div className="grid grid-cols-5 h-16">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="flex flex-col items-center justify-center gap-1 text-[#5F7C50] bg-[#5F7C50]/5"
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -262,6 +265,21 @@ export default function DashboardLayout({
               />
             </svg>
             <span className="text-[10px] font-medium font-sans">Home</span>
+          </button>
+
+          <button
+            onClick={() => router.push('/dashboard/routine')}
+            className="flex flex-col items-center justify-center gap-1 text-[#1A1A1A]/40 hover:text-[#5F7C50] transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span className="text-[10px] font-medium font-sans">Rotina</span>
           </button>
 
           <button className="flex flex-col items-center justify-center gap-1 text-[#1A1A1A]/40 hover:text-[#5F7C50] transition-colors">
