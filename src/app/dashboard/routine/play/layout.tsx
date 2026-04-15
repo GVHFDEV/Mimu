@@ -4,7 +4,7 @@ export default function PlayLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F5F5F0] via-[#F5F5F0] to-[#A6B89E]/10">
+    <div className="min-h-screen bg-[#F5F5F0]">
       {children}
     </div>
   );

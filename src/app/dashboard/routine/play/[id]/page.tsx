@@ -108,7 +108,7 @@ export default function PlayPage() {
 
   if (!activity) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F5F5F0] via-[#F5F5F0] to-[#A6B89E]/10 flex flex-col items-center justify-center p-8">
+      <div className="h-screen bg-[#F5F5F0] flex flex-col items-center justify-center p-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-[#5F7C50] font-display mb-4">
             Atividade não encontrada
@@ -130,14 +130,14 @@ export default function PlayPage() {
 
   // Calculate progress for circle
   const progress = hasTimer ? ((totalTime - timeRemaining) / totalTime) * 100 : 0;
-  const radius = 120;
+  const radius = 90;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="min-h-screen max-h-screen overflow-hidden bg-gradient-to-br from-[#F5F5F0] via-[#F5F5F0] to-[#A6B89E]/10 flex flex-col">
-      {/* Header - Same as routine page */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-[#5F7C50]/10 px-4 py-4 flex-shrink-0">
+    <div className="h-screen overflow-hidden bg-[#F5F5F0] flex flex-col">
+      {/* Header - Fixed at top */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-[#5F7C50]/10 px-4 py-3 flex-shrink-0">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
           {/* Botão Voltar */}
           <motion.button
@@ -183,36 +183,41 @@ export default function PlayPage() {
         </div>
       </header>
 
-      {/* Main Content - Flex layout to fill remaining space */}
-      <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-4 py-4 md:py-6 overflow-hidden">
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 md:gap-4">
-          {/* Activity Title */}
+      {/* Main Content - Flex layout */}
+      <div className="flex-1 flex flex-col px-4 py-4 overflow-hidden min-h-0">
+        {/* Title and Description Block */}
+        <div className="text-center mb-4">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="text-center"
+            className="flex flex-col items-center"
           >
-            <div className="text-4xl md:text-5xl mb-2">{activity.icon}</div>
-            <h2 className="text-xl md:text-2xl font-bold text-[#5F7C50] font-display">
+            <div className="text-4xl mb-2">{activity.icon}</div>
+            <h2 className="text-xl font-bold text-[#5F7C50] font-display mb-1">
               {activity.title}
             </h2>
+            <p className="text-xs text-gray-600 font-sans max-w-xs mx-auto leading-relaxed">
+              {activity.description}
+            </p>
           </motion.div>
+        </div>
 
-          {/* Progress Circle with Timer */}
-          {hasTimer && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="relative"
-            >
-              {/* SVG Progress Circle */}
-              <svg width="220" height="220" viewBox="0 0 220 220" className="transform -rotate-90">
+        {/* Progress Circle - Centered and properly sized */}
+        {hasTimer && (
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="flex-1 flex flex-col items-center justify-center max-h-[30vh]"
+          >
+            <div className="relative w-64 h-64">
+              {/* SVG Progress Circle with proper padding */}
+              <svg width="256" height="256" viewBox="0 0 240 240" className="transform -rotate-90">
                 {/* Background circle */}
                 <circle
-                  cx="110"
-                  cy="110"
+                  cx="120"
+                  cy="120"
                   r={radius}
                   stroke="#E5E7EB"
                   strokeWidth="12"
@@ -220,8 +225,8 @@ export default function PlayPage() {
                 />
                 {/* Progress circle */}
                 <motion.circle
-                  cx="110"
-                  cy="110"
+                  cx="120"
+                  cy="120"
                   r={radius}
                   stroke="#5F7C50"
                   strokeWidth="12"
@@ -235,74 +240,52 @@ export default function PlayPage() {
                 />
               </svg>
 
-              {/* Timer in center */}
+              {/* Timer in center - Perfectly centered */}
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="text-4xl md:text-5xl font-bold text-[#5F7C50] font-display">
+                <div className="text-5xl font-bold text-[#5F7C50] font-display">
                   {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
                 </div>
-                <div className="text-xs text-[#1A1A1A]/50 font-sans mt-1">
+                <div className="text-xs text-gray-500 font-sans mt-2">
                   {isPaused ? 'Pausado' : 'Tempo restante'}
                 </div>
               </div>
-            </motion.div>
-          )}
+            </div>
 
-          {/* Description */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="max-w-xl text-center px-4"
-          >
-            <p className="text-sm md:text-base text-[#1A1A1A]/70 font-sans leading-relaxed">
-              {activity.description}
-            </p>
-          </motion.div>
-
-          {/* Pause/Resume button (only for timed activities) */}
-          {hasTimer && (
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
+            {/* Pause/Resume button - Immediately below circle */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsPaused(!isPaused)}
+              className="mt-4 px-6 py-2 rounded-xl bg-white border-2 border-[#5F7C50]/20 text-[#5F7C50] font-medium hover:bg-[#5F7C50]/5 transition-colors font-sans text-sm shadow-sm"
             >
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsPaused(!isPaused)}
-                className="px-8 py-2.5 rounded-2xl bg-white border-2 border-[#5F7C50]/20 text-[#5F7C50] font-medium hover:bg-[#5F7C50]/5 transition-colors font-sans text-sm"
-              >
-                {isPaused ? '▶ Retomar' : '⏸ Pausar'}
-              </motion.button>
-            </motion.div>
-          )}
-        </div>
+              {isPaused ? '▶ Retomar' : '⏸ Pausar'}
+            </motion.button>
+          </motion.div>
+        )}
 
-        {/* Complete button - at bottom */}
+        {/* Non-timed activities - Show icon in center */}
+        {!hasTimer && (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-8xl">{activity.icon}</div>
+          </div>
+        )}
+
+        {/* Complete button - Sticky at bottom with safe distance */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-          className="w-full max-w-md mx-auto mt-4"
+          transition={{ delay: 0.4, duration: 0.5 }}
+          className="mt-auto pb-6"
         >
           <motion.button
             onClick={handleComplete}
             disabled={isCompleting}
             whileTap={{ scale: 0.95 }}
             whileHover={{ scale: 1.02 }}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#5F7C50] to-[#5F7C50]/90 text-white font-bold text-base md:text-lg shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-sans"
+            className="w-full max-w-md mx-auto block py-4 rounded-2xl bg-gradient-to-r from-[#5F7C50] to-[#5F7C50]/90 text-white font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-sans"
           >
             {isCompleting ? 'Concluindo...' : 'Concluir Atividade'}
           </motion.button>
         </motion.div>
-
-        {/* Footer */}
-        <footer className="mt-4 mb-8">
-          <div className="border-t border-[#5F7C50]/5 pt-4">
-            <p className="text-center text-xs text-[#1A1A1A]/40 font-sans">
-              © 2026 Mimu
-            </p>
-          </div>
-        </footer>
       </div>
 
       {/* Success Animation */}
