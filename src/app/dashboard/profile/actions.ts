@@ -225,40 +225,27 @@ export async function getAchievementProgress() {
 
   const { totalCares, streak, weeklyFrequency } = statsResult.data;
 
+  // Run all queries in parallel
   const [
-    { count: petsCount },
+    { data: pets },
     { count: healthEventsCount },
-    { data: pets }
   ] = await Promise.all([
     supabase
       .from('pets')
-      .select('*', { count: 'exact', head: true })
+      .select('id')
       .eq('user_id', user.id),
     supabase
       .from('health_events')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id),
-    supabase
-      .from('pets')
-      .select('id')
-      .eq('user_id', user.id)
   ]);
 
-  const petIds = pets?.map(p => p.id) || [];
+  const petsCount = pets?.length || 0;
 
-  const [
-    { count: morningCount },
-    { count: nightCount }
-  ] = await Promise.all([
-    supabase
-      .from('daily_logs')
-      .select('*', { count: 'exact', head: true })
-      .in('pet_id', petIds),
-    supabase
-      .from('daily_logs')
-      .select('*', { count: 'exact', head: true })
-      .in('pet_id', petIds)
-  ]);
+  // TODO: Implement proper morning/night activity filtering
+  // For now, using placeholder values until activity shift data is available
+  const morningCount = 0;
+  const nightCount = 0;
 
   // Calculate progress for each achievement
   const progress: Record<string, { current: number; required: number; remaining: number }> = {
@@ -267,10 +254,10 @@ export async function getAchievementProgress() {
     dedicated_month: { current: streak, required: 30, remaining: Math.max(0, 30 - streak) },
     century_club: { current: totalCares, required: 100, remaining: Math.max(0, 100 - totalCares) },
     half_thousand: { current: totalCares, required: 500, remaining: Math.max(0, 500 - totalCares) },
-    morning_person: { current: morningCount || 0, required: 50, remaining: Math.max(0, 50 - (morningCount || 0)) },
-    night_owl: { current: nightCount || 0, required: 50, remaining: Math.max(0, 50 - (nightCount || 0)) },
+    morning_person: { current: morningCount, required: 50, remaining: Math.max(0, 50 - morningCount) },
+    night_owl: { current: nightCount, required: 50, remaining: Math.max(0, 50 - nightCount) },
     health_guardian: { current: healthEventsCount || 0, required: 10, remaining: Math.max(0, 10 - (healthEventsCount || 0)) },
-    multi_pet_master: { current: petsCount || 0, required: 3, remaining: Math.max(0, 3 - (petsCount || 0)) },
+    multi_pet_master: { current: petsCount, required: 3, remaining: Math.max(0, 3 - petsCount) },
     perfect_week: { current: weeklyFrequency, required: 63, remaining: Math.max(0, 63 - weeklyFrequency) },
   };
 
