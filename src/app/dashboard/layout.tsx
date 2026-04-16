@@ -140,7 +140,7 @@ export default function DashboardLayout({
                 </div>
               ) : profile ? (
                 <motion.button
-                  onClick={() => setShowDropdown(!showDropdown)}
+                  onClick={() => router.push('/dashboard/profile')}
                   className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -294,7 +294,14 @@ export default function DashboardLayout({
             <span className="text-[10px] font-medium font-sans">Loja</span>
           </button>
 
-          <button className="flex flex-col items-center justify-center gap-1 text-[#1A1A1A]/40 hover:text-[#5F7C50] transition-colors">
+          <button
+            onClick={() => router.push('/dashboard/profile')}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+              pathname === '/dashboard/profile'
+                ? 'text-[#5F7C50] bg-[#5F7C50]/5'
+                : 'text-[#1A1A1A]/40 hover:text-[#5F7C50]'
+            }`}
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -303,7 +310,7 @@ export default function DashboardLayout({
                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
               />
             </svg>
-            <span className="text-[10px] font-medium font-sans">Conta</span>
+            <span className="text-[10px] font-medium font-sans">Perfil</span>
           </button>
 
           <button className="flex flex-col items-center justify-center gap-1 text-[#1A1A1A]/40 hover:text-[#5F7C50] transition-colors">
